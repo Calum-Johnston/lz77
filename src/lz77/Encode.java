@@ -1,11 +1,15 @@
 package lz77;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 // Class encodes & compresses input using lz77 compression technique
@@ -152,5 +156,27 @@ public class Encode {
 			e.printStackTrace();
 		}
 	}
+	
+	/*public void writeFile(String fileName) {
+		try {
+			DataOutputStream os = new DataOutputStream(new FileOutputStream("D:\\\\Programming\\eclipse-workspace\\lz77\\binary.bin"));
+			for(Tuple tup : compressedData) {
+				try {
+					os.writeChars(Integer.toBinaryString(tup.getOffset()));
+					os.writeChars(Integer.toBinaryString(tup.getLength()));
+					os.writeChars(Integer.toBinaryString(tup.getCharacter().charAt(0)));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			try {
+				os.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+	}*/
 	
 }

@@ -24,11 +24,23 @@ public class Tuple {
 		return offset;
 	}
 	
+	public void setOffset(int offset) {
+		this.offset = offset;
+	}
+	
 	public int getLength() {
 		return length;
 	}
 	
+	public void setLength(int length) {
+		this.length = length;
+	}
+	
 	public String getCharacter() {
 		return character;
+	}
+	
+	public void setCharacter(String character) {
+		this.character = character;
 	}
 }
