@@ -1,6 +1,9 @@
 package lz77;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -18,15 +21,14 @@ public class Decode {
 	
 	// Creates a new instance of class
 	public static void main(String args[]) {
-		String fileName = args[0];
 		Decode lz77 = new Decode();
-		lz77.decode(fileName);
+		lz77.decode(args[0], args[1]);
 	}
 	
 	// Basic function for decoding the data
-	public void decode(String fileName) {	
+	public void decode(String fileName, String fileExtension) {	
 		
-		data = readFile(fileName);
+		data = readFile(fileName, fileExtension);
 		
 		// Defines the data and start variables
 		for(Tuple tup : compressedData) {
@@ -45,21 +47,36 @@ public class Decode {
 	}
 	
 	// Reads in the file to be uncompressed
-	public String readFile(String fileName) {
+	public String readFile(String fileName, String fileExtension) {
+		/*DataInputStream is;
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(fileName + "_compressed.txt"));
+			is = new DataInputStream(new FileInputStream(fileName + "(" + fileExtension + ")_compressed.bin"));
 			try {
-				String line = br.readLine();
-				
-				// Read data into tuples??
-				
-				br.close();
+				int data = is.read();
+				System.out.println(data);
+				is.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}		
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
+		}*/
+		
+		File file = new File(fileName + "(" + fileExtension + ")_compressed.bin");
+		byte[] bytesArray = new byte[(int) file.length()];
+		FileInputStream fis;
+		try {
+			fis = new FileInputStream(file);
+			fis.read(bytesArray);
+			fis.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+		
+		for(byte b : bytesArray){
+			System.out.println(b);
+		}
+		
 		return data;
 	}
 	

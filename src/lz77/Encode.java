@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -20,8 +21,10 @@ public class Encode {
 	ArrayList<Tuple> compressedData = new ArrayList<Tuple>();
 	
 	// Search values for encoding of data
-	int slidingWindowSize = 1000;
-	int lookAheadBuffer = 100;
+	int slidingWindowSize_Bits = 6;
+	int lookAheadBuffer_Bits = 6;
+	int slidingWindowSize;
+	int lookAheadBuffer;
 	
 	// Generic variables required for compression
 	int i;
@@ -34,21 +37,32 @@ public class Encode {
 	
 	// Creates a new instance of class
 	public static void main(String[] args) {
-		String fileName = args[0];
 		Encode lz77 = new Encode();
-		lz77.encode(fileName);
+		lz77.encode(args[0], args[1]);
 	}
 	
 	// Base function for encoding the data
-	public void encode(String fileName){
+	public void encode(String fileName, String fileExtension){
 		
 		// Defines the data and start variables
 		i = 1;
 		d = 0;
 		
-		// Gets the data to compress
-		data = readFile(fileName);
+		// Calculates slidingWindowSize and lookAheadBuffer size based on the number of bits to store them in
+		slidingWindowSize = (int) Math.pow(2, slidingWindowSize_Bits);
+		lookAheadBuffer = (int) Math.pow(2, lookAheadBuffer_Bits);
 		
+		// Gets the data to compress
+		data = readFile(fileName, fileExtension);
+		
+		// Converts the data to binary
+		byte[] b = data.getBytes();
+		data = "";
+		for(byte a : b) {
+			String binaryData = Integer.toBinaryString(a);
+			data += binaryData;
+		}
+
 		// The first character will be default have no previous matches
 		compressedData.add(new Tuple(0, 0, data.substring(0, 1)));
 		
@@ -83,8 +97,8 @@ public class Encode {
 			}
 			checkforNoMatch(data);
 		}
-		writeFile(fileName);
-		printData();
+		writeFile(fileName, fileExtension);
+		//printData();
 		//decode();
 	}
 	
@@ -125,9 +139,9 @@ public class Encode {
 	}
 	
 	// Reads in a file to compress
-	public String readFile(String fileName) {
+	public String readFile(String fileName, String fileExtension) {
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(fileName + ".txt"));
+			BufferedReader br = new BufferedReader(new FileReader(fileName + "." + fileExtension));
 			try {
 				String line = br.readLine();
 				while(line != null) {
@@ -145,26 +159,16 @@ public class Encode {
 	}
 	
 	// Outputs compressed file
-	public void writeFile(String fileName) {
+	public void writeFile(String fileName, String fileExtension) {
+		String binaryData = convertTupleToBinary();
+		System.out.println(binaryData);
+		byte[] tuples = new BigInteger(binaryData, 2).toByteArray();
+		DataOutputStream os;
 		try {
-			PrintWriter writer = new PrintWriter(fileName + "_compressed.txt", "UTF-8");
-			for(Tuple tup : compressedData) {
-				writer.print(tup.toString());
-			}
-			writer.close();
-		} catch (FileNotFoundException | UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	/*public void writeFile(String fileName) {
-		try {
-			DataOutputStream os = new DataOutputStream(new FileOutputStream("D:\\\\Programming\\eclipse-workspace\\lz77\\binary.bin"));
-			for(Tuple tup : compressedData) {
-				try {
-					os.writeChars(Integer.toBinaryString(tup.getOffset()));
-					os.writeChars(Integer.toBinaryString(tup.getLength()));
-					os.writeChars(Integer.toBinaryString(tup.getCharacter().charAt(0)));
+			os = new DataOutputStream(new FileOutputStream(fileName + "(" + fileExtension + ")_compressed.bin"));
+			for(byte tuple : tuples) {
+				try {	
+					os.write(tuple);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -177,6 +181,37 @@ public class Encode {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-	}*/
+	}
+	
+	// Converts the tuples created during compression into binary
+	public String convertTupleToBinary() {
+		
+		String binary = "";
+		
+		for(Tuple tup : compressedData) {
+			
+			String binaryData = Integer.toBinaryString(tup.getOffset());
+			if(binaryData.length() < slidingWindowSize_Bits) {
+				int numberOfZeros = slidingWindowSize_Bits - binaryData.length();
+				for(int i = 0; i < numberOfZeros; i++) {
+					binaryData = "0" + binaryData;
+				}
+			}
+			binary += binaryData;
+			
+			binaryData = Integer.toBinaryString(tup.getLength());
+			if(binaryData.length() < slidingWindowSize_Bits) {
+				int numberOfZeros = slidingWindowSize_Bits - binaryData.length();
+				for(int i = 0; i < numberOfZeros; i++) {
+					binaryData = "0" + binaryData;
+				}
+			}
+			binary += binaryData;
+			
+			binary += tup.getCharacter().charAt(0);
+			
+		}
+		return binary;
+	}
 	
 }
