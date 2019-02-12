@@ -6,13 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 // Class encodes & compresses input using lz77 compression technique
@@ -23,11 +18,11 @@ public class Encode {
 	ArrayList<Tuple> compressedData = new ArrayList<Tuple>();
 	
 	// Search values for encoding of data
-	int slidingWindowSize_Bits = 6;
-	int lookAheadBuffer_Bits = 6;
+	int slidingWindowSize_Bits = 10;
+	int lookAheadBuffer_Bits = 10;
 	int slidingWindowSize;
 	int lookAheadBuffer;
-	
+	 
 	// Generic variables required for compression
 	int i;
 	int d;
@@ -54,16 +49,20 @@ public class Encode {
 		slidingWindowSize = (int) Math.pow(2, slidingWindowSize_Bits);
 		lookAheadBuffer = (int) Math.pow(2, lookAheadBuffer_Bits);
 		
-		// Gets the data to compress
+		// Gets the data to compress (in binary)
 		data = readFile(fileName, fileExtension);
 		
 		// Converts the data to binary
 		byte[] b = data.getBytes();
 		data = "";
+		int count = 0;
 		for(byte a : b) {
 			String binaryData = Integer.toBinaryString(a);
 			data += binaryData;
+			count += 1;
 		}
+		System.out.println("Number of bytes in original data: " + count);
+		System.out.println("Length of original binary: " + data.length());
 
 		// The first character will be default have no previous matches
 		compressedData.add(new Tuple(0, 0, data.substring(0, 1)));
@@ -163,30 +162,21 @@ public class Encode {
 	// Outputs compressed file
 	public void writeFile(String fileName, String fileExtension) {
 		String binaryData = convertTupleToBinary();
-
-		byte[] tuples = new 
-		List<String> strings = new ArrayList<String>();
-		int i = 0;
-		while(i < binaryData.length()) {
-			strings.add(binaryData.substring(i, Math.min(i + 8, binaryData.length())));
-			i += 8;
-			byte b = Byte.parseByte(binaryData.substring(i, Math.min(i + 8, binaryData.length())), 2);
-			
-		}
-		
-		
+		byte[] tuples = convertBinaryToBytes(binaryData);
 		
 		DataOutputStream os;
-		byte[] tuples = new BigInteger(binaryData, 2).toByteArray();
 		try {
+			int count = 0;
 			os = new DataOutputStream(new FileOutputStream(fileName + "(" + fileExtension + ")_compressed.bin"));
 			for(byte tuple : tuples) {
 				try {	
 					os.write(tuple);
+					count += 1; 
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
+			System.out.println("Number of bytes in compressed data: " + count);
 			try {
 				os.close();
 			} catch (IOException e) {
@@ -226,6 +216,32 @@ public class Encode {
 			
 		}
 		return binary;
+	}
+	
+	// Converts the binary string into an array of bytes
+	public byte[] convertBinaryToBytes(String binaryData){
+		byte[] tuples = new byte[(int) (binaryData.length()/8) + 1];
+		
+		int i = 0;
+		int position = 0;
+		byte b = 2;
+		while(i < binaryData.length()) {
+			if(binaryData.substring(i, Math.min(i + 8, binaryData.length())).contains("-")){
+				if(!(binaryData.substring(i, Math.min(i + 8, binaryData.length())).equals("-"))){
+					b = (byte) Integer.parseInt(binaryData.substring(i, Math.min(i + 8, binaryData.length())).replaceAll("-", ""));
+				}
+				tuples[position] = b;
+				position += 1;
+				i += 8;
+			}else{
+				b = (byte) Integer.parseInt(binaryData.substring(i, Math.min(i + 8, binaryData.length())));
+				tuples[position] = b;
+				position += 1;
+				i += 8;
+			}
+		}
+		
+		return tuples;
 	}
 	
 }
