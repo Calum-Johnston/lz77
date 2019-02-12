@@ -12,6 +12,8 @@ import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 // Class encodes & compresses input using lz77 compression technique
 
@@ -161,9 +163,21 @@ public class Encode {
 	// Outputs compressed file
 	public void writeFile(String fileName, String fileExtension) {
 		String binaryData = convertTupleToBinary();
-		System.out.println(binaryData);
-		byte[] tuples = new BigInteger(binaryData, 2).toByteArray();
+
+		byte[] tuples = new 
+		List<String> strings = new ArrayList<String>();
+		int i = 0;
+		while(i < binaryData.length()) {
+			strings.add(binaryData.substring(i, Math.min(i + 8, binaryData.length())));
+			i += 8;
+			byte b = Byte.parseByte(binaryData.substring(i, Math.min(i + 8, binaryData.length())), 2);
+			
+		}
+		
+		
+		
 		DataOutputStream os;
+		byte[] tuples = new BigInteger(binaryData, 2).toByteArray();
 		try {
 			os = new DataOutputStream(new FileOutputStream(fileName + "(" + fileExtension + ")_compressed.bin"));
 			for(byte tuple : tuples) {
@@ -182,7 +196,7 @@ public class Encode {
 			e.printStackTrace();
 		}
 	}
-	
+
 	// Converts the tuples created during compression into binary
 	public String convertTupleToBinary() {
 		
