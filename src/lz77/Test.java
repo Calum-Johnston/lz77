@@ -8,7 +8,6 @@ import java.io.IOException;
 public class Test {
 
 	public static void main(String args[]){
-		int i = 42;
 		DataOutputStream os;
 		try {
 			os = new DataOutputStream(new FileOutputStream("example.bin"));

@@ -17,7 +17,7 @@ public class Tuple {
 	
 	// Overrides the toString() method to return correct information
 	public String toString(){
-		return "" + offset + length + character;
+		return offset + " " + length + " " + character;
 	}
 	
 	public int getOffset() {

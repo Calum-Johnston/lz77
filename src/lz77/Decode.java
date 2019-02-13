@@ -1,5 +1,6 @@
 package lz77;
 
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -14,6 +15,9 @@ public class Decode {
 	
 	// Defines basic variables
 	String data;
+	int offset_bits;
+	int length_bits;
+	int wasted_bits;
 	
 	// Creates a new instance of class
 	public static void main(String args[]) {
@@ -24,56 +28,70 @@ public class Decode {
 	// Basic function for decoding the data
 	public void decode(String fileName, String fileExtension) {	
 		
-		data = readFile(fileName, fileExtension);
+		String compressed_binaryData = "";
+		compressed_binaryData = readFile(fileName, fileExtension);
+		convertBinaryToTuple(compressed_binaryData);
 		
-		// Defines the data and start variables
+		String binaryData = "";
+
 		for(Tuple tup : compressedData) {
 			if(tup.getOffset() == 0) {
-				data += tup.getCharacter();
+				binaryData += tup.getCharacter();
 			}else {
-				if(tup.getCharacter() == "-"){
-					data += data.substring(data.length() - tup.getOffset(), data.length() - tup.getOffset() + tup.getLength());
+				if(tup.getCharacter().equals("-")){
+					binaryData += binaryData.substring(binaryData.length() - tup.getOffset(), binaryData.length() - tup.getOffset() + tup.getLength());
 				}else {
-					data += data.substring(data.length() - tup.getOffset(), data.length() - tup.getOffset() + tup.getLength()) + tup.getCharacter();
+					binaryData += binaryData.substring(binaryData.length() - tup.getOffset(), binaryData.length() - tup.getOffset() + tup.getLength()) + tup.getCharacter();
 				}
 			}
 		}
-		
-		System.out.println(data);
+		System.out.println(binaryData);
+
 	}
 	
 	// Reads in the file to be uncompressed
 	public String readFile(String fileName, String fileExtension) {
-		/*DataInputStream is;
-		try {
-			is = new DataInputStream(new FileInputStream(fileName + "(" + fileExtension + ")_compressed.bin"));
-			try {
-				int data = is.read();
-				System.out.println(data);
-				is.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}		
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}*/
-		
-		File file = new File(fileName + "(" + fileExtension + ")_compressed.bin");
-		byte[] bytesArray = new byte[(int) file.length()];
 		FileInputStream fis;
+		String inputData = "";
+		String inputTotalData = "";
+		File file = new File(fileName + "(" + fileExtension + ")_compressed.bin");
 		try {
 			fis = new FileInputStream(file);
-			fis.read(bytesArray);
+			wasted_bits = fis.read();
+			offset_bits = fis.read();
+			length_bits = fis.read();
+			for(int i = 0; i < file.length() - 3; i++) {
+				int temp = fis.read();
+				inputData = Integer.toBinaryString(temp);
+				while(inputData.length() < 8) {
+					inputData = 0 + inputData;
+				}
+				if(inputData != null) {
+					inputTotalData += inputData;
+				}
+			}
 			fis.close();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
-		
-		for(byte b : bytesArray){
-			System.out.println(b);
-		}
-		
-		return data;
+		}	
+		return inputTotalData;
 	}
 	
+	public void convertBinaryToTuple(String compressed_binaryData) {
+		int i = 0;
+		int offset = 0; int length = 0; int character = 0;
+		while(i < compressed_binaryData.length() - wasted_bits - 1) {
+			System.out.println(compressed_binaryData.length() - wasted_bits - 1);
+			System.out.println(i + offset_bits + length_bits + 1);
+			offset = Integer.parseInt(compressed_binaryData.substring(i, i + offset_bits), 2);
+			length = Integer.parseInt(compressed_binaryData.substring(i + offset_bits, i + offset_bits + length_bits), 2);
+			if(i + offset_bits + length_bits + 1 == compressed_binaryData.length() - wasted_bits - 1) {
+				compressedData.add(new Tuple(offset, length, "-"));
+			}else {
+				character = Integer.parseInt(compressed_binaryData.substring(i + offset_bits + length_bits, i + offset_bits + length_bits + 1), 2);
+				compressedData.add(new Tuple(offset, length, Integer.toString(character)));
+			}
+			i += offset_bits + length_bits + 1;
+		}
+	}
 }
