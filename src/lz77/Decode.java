@@ -1,10 +1,10 @@
 package lz77;
 
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 //Class decodes & uncompresses input which has been compressed through lz77
 
@@ -22,7 +22,14 @@ public class Decode {
 	// Creates a new instance of class
 	public static void main(String args[]) {
 		Decode lz77 = new Decode();
-		lz77.decode(args[0], args[1]);
+		Scanner reader = new Scanner(System.in);
+		System.out.println("Enter the text file to use");
+		String n = reader.next();
+		reader.close();
+		long startTime = System.nanoTime();
+		lz77.decode(n, "txt");
+		long finalTime = System.nanoTime();
+		System.out.println("Time: " + (finalTime - startTime));
 	}
 	
 	// Basic function for decoding the data
@@ -32,21 +39,17 @@ public class Decode {
 		compressed_binaryData = readFile(fileName, fileExtension);
 		convertBinaryToTuple(compressed_binaryData);
 		
-		String binaryData = "";
+		data = "";
 
 		for(Tuple tup : compressedData) {
 			if(tup.getOffset() == 0) {
-				binaryData += tup.getCharacter();
+				data += tup.getCharacter();
 			}else {
-				if(tup.getCharacter().equals("-")){
-					binaryData += binaryData.substring(binaryData.length() - tup.getOffset(), binaryData.length() - tup.getOffset() + tup.getLength());
-				}else {
-					binaryData += binaryData.substring(binaryData.length() - tup.getOffset(), binaryData.length() - tup.getOffset() + tup.getLength()) + tup.getCharacter();
-				}
+				data += data.substring(data.length() - tup.getOffset(), data.length() - tup.getOffset() + tup.getLength()) + tup.getCharacter();
 			}
 		}
-		System.out.println(binaryData);
-
+		System.out.println(data.replaceAll("-", ""));
+		System.out.println("Decoding Successful");
 	}
 	
 	// Reads in the file to be uncompressed
@@ -55,14 +58,22 @@ public class Decode {
 		String inputData = "";
 		String inputTotalData = "";
 		File file = new File(fileName + "(" + fileExtension + ")_compressed.bin");
+		
+		int[] tuples = new int[(int) file.length()];
+		
 		try {
+			
 			fis = new FileInputStream(file);
-			wasted_bits = fis.read();
-			offset_bits = fis.read();
-			length_bits = fis.read();
-			for(int i = 0; i < file.length() - 3; i++) {
+			for(int i = 0; i < file.length(); i++){
 				int temp = fis.read();
-				inputData = Integer.toBinaryString(temp);
+				tuples[i] = temp;
+			}
+		
+			wasted_bits = tuples[0];
+			offset_bits = tuples[1];
+			length_bits = tuples[2];
+			for(int i = 3; i < tuples.length; i++) {
+				inputData = Integer.toBinaryString(tuples[i]);
 				while(inputData.length() < 8) {
 					inputData = 0 + inputData;
 				}
@@ -74,24 +85,25 @@ public class Decode {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}	
-		return inputTotalData;
+		
+		//Return statement removes the extra zero's added
+		return inputTotalData.substring(0, inputTotalData.length() - wasted_bits);
 	}
 	
 	public void convertBinaryToTuple(String compressed_binaryData) {
 		int i = 0;
-		int offset = 0; int length = 0; int character = 0;
-		while(i < compressed_binaryData.length() - wasted_bits - 1) {
-			System.out.println(compressed_binaryData.length() - wasted_bits - 1);
-			System.out.println(i + offset_bits + length_bits + 1);
+		int offset = 0; int length = 0; int character = 0; String character_value = "";
+		while(i < compressed_binaryData.length() - 1) {	
 			offset = Integer.parseInt(compressed_binaryData.substring(i, i + offset_bits), 2);
 			length = Integer.parseInt(compressed_binaryData.substring(i + offset_bits, i + offset_bits + length_bits), 2);
-			if(i + offset_bits + length_bits + 1 == compressed_binaryData.length() - wasted_bits - 1) {
-				compressedData.add(new Tuple(offset, length, "-"));
-			}else {
-				character = Integer.parseInt(compressed_binaryData.substring(i + offset_bits + length_bits, i + offset_bits + length_bits + 1), 2);
-				compressedData.add(new Tuple(offset, length, Integer.toString(character)));
+			if(compressed_binaryData.substring(i + offset_bits + length_bits, i + offset_bits + length_bits +7).charAt(0) == '0'){
+				character = Integer.parseInt(compressed_binaryData.substring(i + offset_bits + length_bits + 1, i + offset_bits + length_bits +7), 2);
+			}else{
+				character = Integer.parseInt(compressed_binaryData.substring(i + offset_bits + length_bits, i + offset_bits + length_bits +7), 2);
 			}
-			i += offset_bits + length_bits + 1;
+			character_value = (char) character + "";
+			compressedData.add(new Tuple(offset, length, character_value));
+			i += offset_bits + length_bits + 7;
 		}
 	}
 }

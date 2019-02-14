@@ -1,12 +1,12 @@
 package lz77;
 
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 // Class encodes & compresses input using lz77 compression technique
 
@@ -16,8 +16,8 @@ public class Encode {
 	ArrayList<Tuple> compressedData = new ArrayList<Tuple>();
 	
 	// Search values for encoding of data
-	int slidingWindowSize_Bits = 10 ;
-	int lookAheadBuffer_Bits = 10;
+	int slidingWindowSize_Bits = 8;
+	int lookAheadBuffer_Bits = 8;
 	int slidingWindowSize;
 	int lookAheadBuffer;
 	 
@@ -33,7 +33,14 @@ public class Encode {
 	// Creates a new instance of class
 	public static void main(String[] args) {
 		Encode lz77 = new Encode();
-		lz77.encode(args[0], args[1]);
+		Scanner reader = new Scanner(System.in);
+		System.out.println("Enter the text file to use");
+		String n = reader.next();
+		reader.close();
+		long startTime = System.nanoTime();
+		lz77.encode(n, "txt");
+		long finalTime = System.nanoTime();
+		System.out.println("Time: " + (finalTime - startTime));
 	}
 	
 	// Base function for encoding the data
@@ -44,24 +51,12 @@ public class Encode {
 		d = 0;
 		
 		// Calculates slidingWindowSize and lookAheadBuffer size based on the number of bits to store them in
-		slidingWindowSize = (int) Math.pow(2, slidingWindowSize_Bits);
-		lookAheadBuffer = (int) Math.pow(2, lookAheadBuffer_Bits);
+		slidingWindowSize = (int) Math.pow(2, slidingWindowSize_Bits) - 1;
+		lookAheadBuffer = (int) Math.pow(2, lookAheadBuffer_Bits) - 1;
 		
 		// Gets the data to compress (in binary)
 		data = readFile(fileName, fileExtension);
-		
-		// Converts the data to binary
-		byte[] b = data.getBytes();
-		data = "";
-		int count = 0;
-		for(byte a : b) {
-			String binaryData = Integer.toBinaryString(a);
-			data += binaryData;
-			count += 1;
-		}
-		
-		System.out.println(data);
-		System.out.println("Number of bytes in original data: " + count);
+	
 		// The first character will be default have no previous matches
 		compressedData.add(new Tuple(0, 0, data.substring(0, 1)));
 		
@@ -97,6 +92,7 @@ public class Encode {
 			checkforNoMatch(data);
 		}
 		writeFile(fileName, fileExtension);
+		System.out.println("Encoding successful");
 		//printData();
 	}
 	
@@ -159,18 +155,20 @@ public class Encode {
 	// Outputs compressed file
 	public void writeFile(String fileName, String fileExtension) {
 		String binaryData = convertTupleToBinary();
-		int[] tuples = convertBinaryToBytes(binaryData);
-		
+		int[] tuples = convertBinaryToInt(binaryData);
 		FileOutputStream os;
 		try {
 			os = new FileOutputStream(fileName + "(" + fileExtension + ")_compressed.bin");
+			int count = 0;
 			for(int tuple : tuples) {
 				try {	
 					os.write(tuple);
+					count += 1;
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
+			System.out.println("Final number of bytes: " + count);
 			try {
 				os.close();
 			} catch (IOException e) {
@@ -183,51 +181,49 @@ public class Encode {
 
 	// Converts the tuples created during compression into binary
 	public String convertTupleToBinary() {
-		
-		String binary = "";
+		StringBuilder binary = new StringBuilder();
 		
 		for(Tuple tup : compressedData) {
-			
-			String binaryData = Integer.toBinaryString(tup.getOffset());
-			if(binaryData.length() < slidingWindowSize_Bits) {
-				int numberOfZeros = slidingWindowSize_Bits - binaryData.length();
-				for(int i = 0; i < numberOfZeros; i++) {
-					binaryData = "0" + binaryData;
-				}
+			String offset = Integer.toBinaryString(tup.getOffset());
+			while(offset.length() < slidingWindowSize_Bits) {
+				offset = "0" + offset;
 			}
-			binary += binaryData;
+			binary.append(offset);
 			
-			binaryData = Integer.toBinaryString(tup.getLength());
-			if(binaryData.length() < slidingWindowSize_Bits) {
-				int numberOfZeros = slidingWindowSize_Bits - binaryData.length();
-				for(int i = 0; i < numberOfZeros; i++) {
-					binaryData = "0" + binaryData;
-				}
+			String length = Integer.toBinaryString(tup.getLength());
+			while(length.length() < lookAheadBuffer_Bits) {
+				length = "0" + length;
 			}
-			binary += binaryData;
+			binary.append(length);
 			
-			binary += tup.getCharacter().charAt(0);
-			
+			String character = Integer.toBinaryString(tup.getCharacter().charAt(0));
+			while(character.length() < 7){
+				character = "0" + character; 
+			}
+			binary.append(character);
 		}
-		return binary;
+		return binary.toString();
 	}
 	
-	// Converts the binary string into an array of bytes
-	public int[] convertBinaryToBytes(String binaryData){
-		int[] tuples = new int[(int) (binaryData.length()/8) + 4];
+	// Converts the binary string into an array of integers
+	public int[] convertBinaryToInt(String binaryData){
+		int[] tuples;
+		if(binaryData.length() % 8 == 0){
+			tuples = new int[(int) (binaryData.length()/8) + 3];
+		}else{
+		tuples = new int[(int) (binaryData.length()/8) + 4];
+		}
 		tuples[1] = slidingWindowSize_Bits;
 		tuples[2] = lookAheadBuffer_Bits;
 		
 		int i = 0;
 		int position = 3;
 		int count = 0;
-
-		System.out.println(binaryData);
 		
-		binaryData = binaryData + "11";
-		System.out.println(binaryData);
 		while(i < binaryData.length()) {
+			// If it contains a "-"
 			if(binaryData.substring(i, Math.min(i + 8, binaryData.length())).contains("-")){
+				// If it is not just a "-" by itself, make it fit 8 bits
 				if(!(binaryData.substring(i, Math.min(i + 8, binaryData.length())).equals("-"))){
 					String temp = binaryData.substring(i, Math.min(i + 8, binaryData.length())).replaceAll("-", "");
 					while(temp.length() < 8) {
@@ -237,11 +233,28 @@ public class Encode {
 					tuples[position] = Integer.parseInt(temp, 2);
 					position += 1;
 					i += 8;
+				}else{
+					
+					position += 1;
+					i = i + 8;
 				}
+			// If it does not contain a "-" 
 			}else{
-				tuples[position] = Integer.parseInt(binaryData.substring(i, Math.min(i + 8, binaryData.length())), 2);
-				position += 1;
-				i += 8;
+				// If it is less than 8 bits, we need to make it 8 bits (only applies to final part)
+				if(binaryData.length() < i + 8){
+					String temp = binaryData.substring(i, Math.min(i + 8, binaryData.length()));
+					while(temp.length() < 8){
+						temp = temp + "0";
+						count += 1;
+					}
+					tuples[position] = Integer.parseInt(temp, 2);
+					position += 1;
+					i += 8;
+				}else{
+					tuples[position] = Integer.parseInt(binaryData.substring(i, Math.min(i + 8, binaryData.length())), 2);
+					position += 1;
+					i += 8;
+				}
 			}
 		}
 		
