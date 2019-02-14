@@ -16,7 +16,7 @@ public class Encode {
 	ArrayList<Tuple> compressedData = new ArrayList<Tuple>();
 	
 	// Search values for encoding of data
-	int slidingWindowSize_Bits = 8;
+	int slidingWindowSize_Bits = 16;
 	int lookAheadBuffer_Bits = 8;
 	int slidingWindowSize;
 	int lookAheadBuffer;
@@ -53,6 +53,8 @@ public class Encode {
 		// Calculates slidingWindowSize and lookAheadBuffer size based on the number of bits to store them in
 		slidingWindowSize = (int) Math.pow(2, slidingWindowSize_Bits) - 1;
 		lookAheadBuffer = (int) Math.pow(2, lookAheadBuffer_Bits) - 1;
+		
+		long x = System.nanoTime();
 		
 		// Gets the data to compress (in binary)
 		data = readFile(fileName, fileExtension);
@@ -91,6 +93,7 @@ public class Encode {
 			}
 			checkforNoMatch(data);
 		}
+		System.out.println(System.nanoTime() - x);
 		writeFile(fileName, fileExtension);
 		System.out.println("Encoding successful");
 		//printData();
@@ -182,7 +185,7 @@ public class Encode {
 	// Converts the tuples created during compression into binary
 	public String convertTupleToBinary() {
 		StringBuilder binary = new StringBuilder();
-		
+		System.out.println(compressedData.size());
 		for(Tuple tup : compressedData) {
 			String offset = Integer.toBinaryString(tup.getOffset());
 			while(offset.length() < slidingWindowSize_Bits) {
