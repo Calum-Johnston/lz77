@@ -16,7 +16,7 @@ public class Encode {
 	ArrayList<Tuple> compressedData = new ArrayList<Tuple>();
 	
 	// Search values for encoding of data
-	int slidingWindowSize_Bits = 14;
+	int slidingWindowSize_Bits = 13;
 	int lookAheadBuffer_Bits = 8;
 	int slidingWindowSize;
 	int lookAheadBuffer;
@@ -34,7 +34,7 @@ public class Encode {
 	public static void main(String[] args) {
 		Encode lz77 = new Encode();
 		Scanner reader = new Scanner(System.in);
-		System.out.println("Enter the text file to use");
+		System.out.println("Enter the file name");
 		String fileName = reader.next();
 		System.out.println("Enter the file type");
 		String fileType = reader.next();
@@ -161,12 +161,10 @@ public class Encode {
 		int[] tuples = convertBinaryToInt(binaryData);
 		FileOutputStream os;
 		try {
-			os = new FileOutputStream(fileName + "(" + slidingWindowSize_Bits + "," + lookAheadBuffer_Bits + ")_compressed.bin");
-			int count = 0;
+			os = new FileOutputStream(fileName + "(" + fileExtension + ")_compressed.bin");
 			for(int tuple : tuples) {
 				try {	
 					os.write(tuple);
-					count += 1;
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -232,12 +230,10 @@ public class Encode {
 						count += 1;
 					}
 					tuples[position] = Integer.parseInt(temp, 2);
-					position += 1;
-					i += 8;
 				}else{
-					position += 1;
-					i = i + 8;
 				}
+				position += 1;
+				i = i + 8;
 			// If it does not contain a "-" 
 			}else{
 				// If it is less than 8 bits, we need to make it 8 bits (only applies to final part)
@@ -247,13 +243,12 @@ public class Encode {
 						temp = temp + "0";
 						count += 1;
 					}
-					tuples[position] = Integer.parseInt(temp, 2);					position += 1;
-					i += 8;
+					tuples[position] = Integer.parseInt(temp, 2);					
 				}else{
 					tuples[position] = Integer.parseInt(binaryData.substring(i, Math.min(i + 8, binaryData.length())), 2);
-					position += 1;
-					i += 8;
 				}
+				position += 1;
+				i += 8;
 			}
 		}
 		tuples[0] = Integer.parseInt(Integer.toString(count), 10);

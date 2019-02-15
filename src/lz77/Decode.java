@@ -19,14 +19,11 @@ public class Decode {
 	int length_bits;
 	int wasted_bits;
 	
-	int slidingWindowSize_Bits = 14;
-	int lookAheadBuffer_Bits = 8;
-	
 	// Creates a new instance of class
 	public static void main(String args[]) {
 		Decode lz77 = new Decode();
 		Scanner reader = new Scanner(System.in);
-		System.out.println("Enter the text file to use");
+		System.out.println("Enter the file name");
 		String fileName = reader.next();
 		System.out.println("Enter the file type");
 		String fileType = reader.next();
@@ -62,7 +59,7 @@ public class Decode {
 		FileInputStream fis;
 		String inputData = "";
 		StringBuilder inputTotalData = new StringBuilder();
-		File file = new File(fileName + "(" + slidingWindowSize_Bits + "," + lookAheadBuffer_Bits + ")_compressed.bin");
+		File file = new File(fileName + "(" + fileExtension + ")_compressed.bin");
 		
 		int[] tuples = new int[(int) file.length()];
 		
