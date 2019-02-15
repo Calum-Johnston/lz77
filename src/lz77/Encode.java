@@ -16,7 +16,7 @@ public class Encode {
 	ArrayList<Tuple> compressedData = new ArrayList<Tuple>();
 	
 	// Search values for encoding of data
-	int slidingWindowSize_Bits = 16;
+	int slidingWindowSize_Bits = 14;
 	int lookAheadBuffer_Bits = 8;
 	int slidingWindowSize;
 	int lookAheadBuffer;
@@ -38,7 +38,7 @@ public class Encode {
 		String n = reader.next();
 		reader.close();
 		long startTime = System.nanoTime();
-		lz77.encode(n, "txt");
+		lz77.encode(n, "csv");
 		long finalTime = System.nanoTime();
 		System.out.println("Time: " + (finalTime - startTime));
 	}
@@ -53,9 +53,7 @@ public class Encode {
 		// Calculates slidingWindowSize and lookAheadBuffer size based on the number of bits to store them in
 		slidingWindowSize = (int) Math.pow(2, slidingWindowSize_Bits) - 1;
 		lookAheadBuffer = (int) Math.pow(2, lookAheadBuffer_Bits) - 1;
-		
-		long x = System.nanoTime();
-		
+				
 		// Gets the data to compress (in binary)
 		data = readFile(fileName, fileExtension);
 	
@@ -74,7 +72,7 @@ public class Encode {
 				
 				// If the Sliding Window max size is greater than how much of the data has been compressed so far
 				if(i > slidingWindowSize) {
-					d = data.substring(i - slidingWindowSize, i).lastIndexOf(lookAheadData);
+					d = data.substring(i - slidingWindowSize, i).indexOf(lookAheadData);
 					if(d != -1) {
 						d = slidingWindowSize - d; 
 						addTuple(data, lookAheadData.length());
@@ -83,7 +81,7 @@ public class Encode {
 					
 				// If the Sliding Window max size is less than how much of the data has been compressed so far
 				}else {
-					d = data.substring(0, i).lastIndexOf(lookAheadData);
+					d = data.substring(0, i).indexOf(lookAheadData);
 					if(d != -1) {
 						d = i - d;
 						addTuple(data, lookAheadData.length());
@@ -93,7 +91,6 @@ public class Encode {
 			}
 			checkforNoMatch(data);
 		}
-		System.out.println(System.nanoTime() - x);
 		writeFile(fileName, fileExtension);
 		System.out.println("Encoding successful");
 		//printData();
@@ -137,12 +134,13 @@ public class Encode {
 	
 	// Reads in a file to compress
 	public String readFile(String fileName, String fileExtension) {
+		StringBuilder readInData = new StringBuilder();
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(fileName + "." + fileExtension));
 			try {
 				String line = br.readLine();
 				while(line != null) {
-					data += line;
+					readInData.append(line);
 					line = br.readLine();
 				}
 				br.close();
@@ -152,7 +150,7 @@ public class Encode {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		return data;
+		return readInData.toString();
 	}
 	
 	// Outputs compressed file
@@ -161,7 +159,7 @@ public class Encode {
 		int[] tuples = convertBinaryToInt(binaryData);
 		FileOutputStream os;
 		try {
-			os = new FileOutputStream(fileName + "(" + fileExtension + ")_compressed.bin");
+			os = new FileOutputStream(fileName + "(" + slidingWindowSize_Bits + "," + lookAheadBuffer_Bits + ")_compressed.bin");
 			int count = 0;
 			for(int tuple : tuples) {
 				try {	
@@ -185,7 +183,6 @@ public class Encode {
 	// Converts the tuples created during compression into binary
 	public String convertTupleToBinary() {
 		StringBuilder binary = new StringBuilder();
-		System.out.println(compressedData.size());
 		for(Tuple tup : compressedData) {
 			String offset = Integer.toBinaryString(tup.getOffset());
 			while(offset.length() < slidingWindowSize_Bits) {
@@ -237,7 +234,6 @@ public class Encode {
 					position += 1;
 					i += 8;
 				}else{
-					
 					position += 1;
 					i = i + 8;
 				}
@@ -250,8 +246,7 @@ public class Encode {
 						temp = temp + "0";
 						count += 1;
 					}
-					tuples[position] = Integer.parseInt(temp, 2);
-					position += 1;
+					tuples[position] = Integer.parseInt(temp, 2);					position += 1;
 					i += 8;
 				}else{
 					tuples[position] = Integer.parseInt(binaryData.substring(i, Math.min(i + 8, binaryData.length())), 2);
@@ -260,7 +255,6 @@ public class Encode {
 				}
 			}
 		}
-		
 		tuples[0] = Integer.parseInt(Integer.toString(count), 10);
 		
 		return tuples;
