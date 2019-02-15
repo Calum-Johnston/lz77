@@ -35,10 +35,12 @@ public class Encode {
 		Encode lz77 = new Encode();
 		Scanner reader = new Scanner(System.in);
 		System.out.println("Enter the text file to use");
-		String n = reader.next();
+		String fileName = reader.next();
+		System.out.println("Enter the file type");
+		String fileType = reader.next();
 		reader.close();
 		long startTime = System.nanoTime();
-		lz77.encode(n, "csv");
+		lz77.encode(fileName, fileType);
 		long finalTime = System.nanoTime();
 		System.out.println("Time: " + (finalTime - startTime));
 	}
@@ -169,7 +171,6 @@ public class Encode {
 					e.printStackTrace();
 				}
 			}
-			System.out.println("Final number of bytes: " + count);
 			try {
 				os.close();
 			} catch (IOException e) {

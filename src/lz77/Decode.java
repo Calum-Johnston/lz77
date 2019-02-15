@@ -20,17 +20,19 @@ public class Decode {
 	int wasted_bits;
 	
 	int slidingWindowSize_Bits = 14;
-	int lookAheadBuffer_Bits = 12;
+	int lookAheadBuffer_Bits = 8;
 	
 	// Creates a new instance of class
 	public static void main(String args[]) {
 		Decode lz77 = new Decode();
 		Scanner reader = new Scanner(System.in);
 		System.out.println("Enter the text file to use");
-		String n = reader.next();
+		String fileName = reader.next();
+		System.out.println("Enter the file type");
+		String fileType = reader.next();
 		reader.close();
 		long startTime = System.nanoTime();
-		lz77.decode(n, "txt");
+		lz77.decode(fileName, fileType);
 		long finalTime = System.nanoTime();
 		System.out.println("Time: " + (finalTime - startTime));
 	}
